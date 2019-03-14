@@ -11,13 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//go:generate packr2
 
 package imagevector
 
 import (
-	"path/filepath"
+	"github.com/gobuffalo/packr/v2"
+	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 
-	"github.com/gardener/gardener-extensions/controllers/provider-gcp/pkg/gcp"
 	"github.com/gardener/gardener/pkg/utils/imagevector"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -27,7 +31,22 @@ import (
 var ImageVector imagevector.ImageVector
 
 func init() {
-	var err error
-	ImageVector, err = imagevector.ReadImageVector(filepath.Join(gcp.ChartsPath, "images.yaml"))
+	box := packr.New("charts", "../../charts")
+
+	imagesYaml, err := box.FindString("images.yaml")
+	runtime.Must(err)
+
+	tmpFile, err := ioutil.TempFile("", "")
+	runtime.Must(err)
+	defer func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+	}()
+
+	_, err = io.Copy(tmpFile, strings.NewReader(imagesYaml))
+	runtime.Must(err)
+
+	// TODO: ReadImageVector should be split into ReadImageVector and MergeImageVector
+	ImageVector, err = imagevector.ReadImageVector(tmpFile.Name())
 	runtime.Must(err)
 }

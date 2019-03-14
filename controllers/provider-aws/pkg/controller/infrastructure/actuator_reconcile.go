@@ -42,7 +42,7 @@ import (
 func (a *actuator) reconcile(ctx context.Context, infrastructure *extensionsv1alpha1.Infrastructure, cluster *extensionscontroller.Cluster) error {
 	infrastructureConfig := &awsapi.InfrastructureConfig{}
 	if _, _, err := a.decoder.Decode(infrastructure.Spec.ProviderConfig.Raw, nil, infrastructureConfig); err != nil {
-		return fmt.Errorf("Could not decode provider config: %+v", err)
+		return fmt.Errorf("could not decode provider config: %+v", err)
 	}
 
 	providerSecret := &corev1.Secret{}
@@ -52,22 +52,22 @@ func (a *actuator) reconcile(ctx context.Context, infrastructure *extensionsv1al
 
 	terraformConfig, err := generateTerraformInfraConfig(ctx, infrastructure, infrastructureConfig, providerSecret)
 	if err != nil {
-		return fmt.Errorf("Failed to generate Terraform config: %+v", err)
+		return fmt.Errorf("failed to generate Terraform config: %+v", err)
 	}
 
 	chartRenderer, err := chartrenderer.New(a.kubernetes)
 	if err != nil {
-		return fmt.Errorf("Could not create chart renderer: %+v", err)
+		return fmt.Errorf("could not create chart renderer: %+v", err)
 	}
 
 	release, err := chartRenderer.Render(filepath.Join(aws.InternalChartsPath, "aws-infra"), "aws-infra", infrastructure.Namespace, terraformConfig)
 	if err != nil {
-		return fmt.Errorf("Could not render Terraform chart: %+v", err)
+		return fmt.Errorf("could not render Terraform chart: %+v", err)
 	}
 
 	tf, err := a.newTerraformer(aws.TerrformerPurposeInfra, infrastructure.Namespace, infrastructure.Name)
 	if err != nil {
-		return fmt.Errorf("Could not create terraformer object: %+v", err)
+		return fmt.Errorf("could not create terraformer object: %+v", err)
 	}
 
 	if err := tf.
@@ -87,7 +87,7 @@ func (a *actuator) reconcile(ctx context.Context, infrastructure *extensionsv1al
 	}
 
 	if err := a.updateProviderStatus(ctx, tf, infrastructure, infrastructureConfig); err != nil {
-		return fmt.Errorf("Failed to update the provider status in the Infrastructure resource: %+v", err)
+		return fmt.Errorf("failed to update the provider status in the Infrastructure resource: %+v", err)
 	}
 
 	return nil

@@ -15,8 +15,8 @@
 package infrastructure
 
 import (
-	"github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/aws"
-	"github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/imagevector"
+	"github.com/gardener/gardener-extensions/controllers/provider-gcp/pkg/gcp"
+	"github.com/gardener/gardener-extensions/controllers/provider-gcp/pkg/imagevector"
 	extensionscontroller "github.com/gardener/gardener-extensions/pkg/controller"
 	"github.com/gardener/gardener-extensions/pkg/controller/infrastructure"
 
@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	addToManagerBuilder = extensionscontroller.NewAddToManagerBuilder()
+	addToManagerBuilder = extensionscontroller.NewAddToManagerBuilder(Add)
 	// AddToManager adds all Infrastructure controllers to the given manager.
 	AddToManager = addToManagerBuilder.AddToManager
 
@@ -40,8 +40,7 @@ var (
 )
 
 func init() {
-	addToManagerBuilder.Register(Add)
-	terraformerImage, err := imagevector.ImageVector.FindImage(aws.TerraformerImageName, "", "")
+	terraformerImage, err := imagevector.ImageVector.FindImage(gcp.TerraformerImageName, "", "")
 	runtime.Must(err)
 
 	TerraformerImage = terraformerImage.String()
@@ -51,10 +50,9 @@ func init() {
 // The opts.Reconciler is being set with a newly instantiated actuator.
 func AddWithOptions(mgr manager.Manager, opts controller.Options, terraformerImage string, ignoreOperationAnnotation bool) error {
 	return infrastructure.Add(mgr, infrastructure.AddArgs{
-		Actuator:                  NewActuator(terraformerImage),
-		Type:                      aws.Type,
-		ControllerOptions:         opts,
-		IgnoreOperationAnnotation: ignoreOperationAnnotation,
+		Actuator:          infrastructure.OperationAnnotationWrapper(NewActuator(terraformerImage)),
+		ControllerOptions: opts,
+		Predicates:        infrastructure.DefaultPredicates(mgr.GetClient(), gcp.Type, ignoreOperationAnnotation),
 	})
 }
 

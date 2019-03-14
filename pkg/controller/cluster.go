@@ -98,7 +98,11 @@ func ShootFromCluster(cluster *extensionsv1alpha1.Cluster) (*gardenv1beta1.Shoot
 // ShootIsFailed returns whether the given shoot is marked as 'failed'.
 func ShootIsFailed(shoot *gardenv1beta1.Shoot) bool {
 	lastOperation := shoot.Status.LastOperation
-	return lastOperation != nil && lastOperation.State == gardencorev1alpha1.LastOperationStateFailed && shoot.Generation == shoot.Status.ObservedGeneration
+	if lastOperation == nil {
+		return false
+	}
+
+	return lastOperation.State == gardencorev1alpha1.LastOperationStateFailed
 }
 
 func newGardenDecoder() (runtime.Decoder, error) {

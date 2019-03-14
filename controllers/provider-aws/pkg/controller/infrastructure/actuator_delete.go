@@ -38,12 +38,12 @@ import (
 func (a *actuator) delete(ctx context.Context, infrastructure *extensionsv1alpha1.Infrastructure, cluster *extensionscontroller.Cluster) error {
 	tf, err := a.newTerraformer(aws.TerrformerPurposeInfra, infrastructure.Namespace, infrastructure.Name)
 	if err != nil {
-		return fmt.Errorf("Could not create the Terraformer: %+v", err)
+		return fmt.Errorf("could not create the Terraformer: %+v", err)
 	}
 
 	configExists, err := tf.ConfigExists()
 	if err != nil {
-		return fmt.Errorf("Terraform configuration was not found: %+v", err)
+		return fmt.Errorf("terraform configuration was not found: %+v", err)
 	}
 
 	stateVariables, err := tf.GetStateOutputVariables(aws.VPCIDKey)

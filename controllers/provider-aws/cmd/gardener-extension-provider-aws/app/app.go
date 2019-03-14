@@ -17,11 +17,11 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/apis/aws/install"
+	awscontroller "github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/controller"
 	"os"
 
-	awsapi "github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/apis/aws"
-	awsv1alpha1 "github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/apis/aws/v1alpha1"
-	awsinfrastructure "github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/infrastructure"
+	awsinfrastructure "github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/controller/infrastructure"
 	"github.com/gardener/gardener-extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener-extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener-extensions/pkg/controller/infrastructure"
@@ -43,14 +43,17 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			LeaderElectionID:        controllercmd.LeaderElectionNameID(Name),
 			LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
 		}
-		ctrlOpts = &controllercmd.ControllerOptions{
+
+		infraCtrlOpts = &controllercmd.ControllerOptions{
 			MaxConcurrentReconciles: 5,
 		}
-		infrastructureReconcilerOpts = &infrastructure.ReconcilerOptions{
+		infraReconcileOpts = &infrastructure.ReconcilerOptions{
 			IgnoreOperationAnnotation: true,
 		}
+		unprefixedInfraOpts = controllercmd.NewOptionAggregator(infraCtrlOpts, infraReconcileOpts)
+		infraOpts           = controllercmd.PrefixOption("infrastructure-", &unprefixedInfraOpts)
 
-		aggOption = controllercmd.NewOptionAggregator(restOpts, mgrOpts, ctrlOpts, infrastructureReconcilerOpts)
+		aggOption = controllercmd.NewOptionAggregator(restOpts, mgrOpts, infraOpts)
 	)
 
 	cmd := &cobra.Command{
@@ -70,16 +73,14 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 			}
 
-			if err := awsapi.AddToScheme(mgr.GetScheme()); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update manager scheme with internal AWS API scheme")
-			}
-			if err := awsv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update manager scheme with v1alpha1 AWS API scheme")
+			if err := install.AddToScheme(mgr.GetScheme()); err != nil {
+				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 			}
 
-			ctrlOpts.Completed().Apply(&awsinfrastructure.Options)
-			infrastructureReconcilerOpts.Completed().Apply(&awsinfrastructure.IgnoreOperationAnnotation)
-			if err := awsinfrastructure.AddToManager(mgr); err != nil {
+			infraCtrlOpts.Completed().Apply(&awsinfrastructure.Options)
+			infraReconcileOpts.Completed().Apply(&awsinfrastructure.IgnoreOperationAnnotation)
+
+			if err := awscontroller.AddToManager(mgr); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not add controller to manager")
 			}
 

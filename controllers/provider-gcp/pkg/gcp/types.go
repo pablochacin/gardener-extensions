@@ -19,6 +19,18 @@ import "path/filepath"
 const (
 	// TerraformerImageName is the name of the Terraformer image.
 	TerraformerImageName = "terraformer"
+
+	// TerraformerPurposeInfra is the terraformer infrastructure purpose.
+	TerraformerPurposeInfra = "infra"
+
+	// TerraformerOutputKeyVPCName is the name of the vpc_name terraform output variable.
+	TerraformerOutputKeyVPCName = "vpc_name"
+	// TerraformerOutputKeyServiceAccountEmail is the name of the service_account_email terraform output variable.
+	TerraformerOutputKeyServiceAccountEmail = "service_account_email"
+	// TerraformerOutputKeySubnetNodes is the name of the subnet_nodes terraform output variable.
+	TerraformerOutputKeySubnetNodes = "subnet_nodes"
+	// TerraformerOutputKeySubnetInternal is the name of the subnet_internal terraform output variable.
+	TerraformerOutputKeySubnetInternal = "subnet_internal"
 )
 
 var (

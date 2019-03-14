@@ -12,43 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package coreos
+package infrastructure
 
 import (
+	"github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/aws"
+	"github.com/gardener/gardener-extensions/controllers/provider-aws/pkg/imagevector"
 	extensionscontroller "github.com/gardener/gardener-extensions/pkg/controller"
-	"github.com/gardener/gardener-extensions/pkg/controller/operatingsystemconfig"
+	"github.com/gardener/gardener-extensions/pkg/controller/infrastructure"
+
+	"k8s.io/apimachinery/pkg/util/runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// Type is the type of OperatingSystemConfigs the coreos actuator / predicate are built for.
-const Type = "coreos"
-
-func init() {
-	addToManagerBuilder.Register(Add)
-}
-
 var (
-	addToManagerBuilder = extensionscontroller.NewAddToManagerBuilder()
-	// AddToManager adds all coreos controllers to the given manager.
+	addToManagerBuilder = extensionscontroller.NewAddToManagerBuilder(Add)
+	// AddToManager adds all Infrastructure controllers to the given manager.
 	AddToManager = addToManagerBuilder.AddToManager
 
 	// Options are the default controller.Options for Add.
 	Options = controller.Options{}
+	// TerraformerImage is the image repository and tag for the Terraformer.
+	TerraformerImage string
+	// IgnoreOperationAnnotation defines whether to ignore the operation annotation.
+	IgnoreOperationAnnotation bool
 )
+
+func init() {
+	terraformerImage, err := imagevector.ImageVector.FindImage(aws.TerraformerImageName, "", "")
+	runtime.Must(err)
+
+	TerraformerImage = terraformerImage.String()
+}
 
 // AddWithOptions adds a controller with the given Options to the given manager.
 // The opts.Reconciler is being set with a newly instantiated actuator.
-func AddWithOptions(mgr manager.Manager, opts controller.Options) error {
-	return operatingsystemconfig.Add(mgr, operatingsystemconfig.AddArgs{
-		Actuator:          NewActuator(),
+func AddWithOptions(mgr manager.Manager, opts controller.Options, terraformerImage string, ignoreOperationAnnotation bool) error {
+	return infrastructure.Add(mgr, infrastructure.AddArgs{
+		Actuator:          infrastructure.OperationAnnotationWrapper(NewActuator(terraformerImage)),
 		ControllerOptions: opts,
-		Predicates:        operatingsystemconfig.DefaultPredicates(Type),
+		Predicates:        infrastructure.DefaultPredicates(mgr.GetClient(), aws.Type, ignoreOperationAnnotation),
 	})
 }
 
 // Add adds a controller with the default Options.
 func Add(mgr manager.Manager) error {
-	return AddWithOptions(mgr, Options)
+	return AddWithOptions(mgr, Options, TerraformerImage, IgnoreOperationAnnotation)
 }
