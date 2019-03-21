@@ -22,7 +22,7 @@ func (a *actuator) reconcile(ctx context.Context, config *extensionsv1alpha1.Ope
 
 	var command *string
 	if path := config.Spec.ReloadConfigFilePath; path != nil {
-		cmd := fmt.Sprintf("/usr/bin/env bash %s", *path)
+		cmd := fmt.Sprintf("/usr/bin/cloud-init clean && /usr/bin/cloud-init --file %s init", *path)
 		command = &cmd
 	}
 
