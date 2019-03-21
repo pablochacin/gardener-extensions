@@ -25,11 +25,12 @@ write_files:
 {{- end -}}
 {{- end -}}
 {{- end }}
-{{ if .Bootstrap -}}
 runcmd:
 - systemctl daemon-reload
+{{ if .Bootstrap -}}
+- ln -s /usr/bin/docker /bin/docker
 - systemctl start docker
+{{ end -}}
 {{ range $_, $unit := .Units -}}
 - systemctl enable '{{ $unit.Name }}' && systemctl restart '{{ $unit.Name }}'
-{{- end -}}
-{{- end -}}
+{{ end -}}
