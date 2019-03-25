@@ -32,7 +32,7 @@ spec:
     encoding: b64
     content:
       secretRef:
-        name: default-token-5dtjz
+        name: default-token-vv9b8
         dataKey: token
   - path: /etc/sysctl.d/99-k8s-general.conf
     permissions: 0644
